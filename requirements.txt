@@ -1,0 +1,4 @@
+# Không cần gì thêm vì dùng stdlib
+# Nhưng Railway cần file này
+requests
+psycopg2-binary
