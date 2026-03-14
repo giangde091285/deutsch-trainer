@@ -39,7 +39,7 @@ parser.add_argument('--local-only', action='store_true', help='Only allow local 
 parser.add_argument('--ngrok', action='store_true', help='Auto-start ngrok tunnel for internet sharing')
 args = parser.parse_args()
 
-PORT = args.port
+PORT = int(os.environ.get('PORT', args.port))
 HOST = '127.0.0.1' if args.local_only else args.host
 
 # Database setup
