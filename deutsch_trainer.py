@@ -1035,6 +1035,17 @@ body{background:var(--bg);color:var(--txt);font-family:'IBM Plex Sans',sans-seri
   #demoControls button{padding:4px 8px;font-size:11px;}
 }
 
+/* Embassy demo speaker styles */
+.demo-wrap.beamter{align-items:flex-start;}
+.demo-wrap.antragsteller{align-items:flex-end;}
+.demo-speaker-tag.beamter{color:#a855f7;}
+.demo-speaker-tag.antragsteller{color:#22c55e;text-align:right;}
+.demo-bub.beamter{background:rgba(168,85,247,0.12);border:1px solid rgba(168,85,247,0.25);color:#d8b4fe;border-bottom-left-radius:4px;}
+.demo-bub.antragsteller{background:rgba(34,197,94,0.12);border:1px solid rgba(34,197,94,0.25);color:#86efac;border-bottom-right-radius:4px;}
+.demo-wrap.antragsteller .demo-row{flex-direction:row-reverse;}
+.demo-wrap.beamter .demo-vn{color:rgba(168,85,247,0.6);background:rgba(168,85,247,0.05);}
+.demo-wrap.antragsteller .demo-vn{color:rgba(34,197,94,0.6);background:rgba(34,197,94,0.05);text-align:right;align-self:flex-end;}
+
 .score-value{font-size:14px;font-weight:600;color:#fbbf24;}
 .score-feedback{margin-top:16px;padding:12px;background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.2);border-radius:8px;}
 .feedback-title{font-size:13px;font-weight:600;color:#34d399;margin-bottom:4px;}
@@ -1184,7 +1195,7 @@ canvas#wv{transition:opacity .3s;opacity:.2;}canvas#wv.live{opacity:1;}
     </button>
     <button class="mode-btn" onclick="selectMode('embassy')" style="border-color:#a855f733">
       <span style="font-size:24px">🏛️</span>
-      <div><div class="lbl">Phỏng vấn Đại Sứ Quán</div><div class="dsc">Giả lập phỏng vấn visa Đức</div></div>
+      <div><div class="lbl">Phỏng vấn Đại Sứ Quán</div><div class="dsc">Phỏng vấn visa Sprachvisum • 4 Phase • 114 câu hỏi thực tế</div></div>
       <span style="margin-left:auto;color:#a855f7;font-size:18px">→</span>
     </button>
     <button class="mode-btn" onclick="selectMode('grammar')" style="border-color:#10b98133">
@@ -1196,6 +1207,11 @@ canvas#wv{transition:opacity .3s;opacity:.2;}canvas#wv.live{opacity:1;}
       <span style="font-size:24px">🎬</span>
       <div><div class="lbl">Demo Prüfung ansehen</div><div class="dsc">Xem mẫu thi TELC B1 hoàn chỉnh • 3 Teil • Không cần API key</div></div>
       <span style="margin-left:auto;color:#f59e0b;font-size:18px">→</span>
+    </button>
+    <button class="mode-btn" onclick="startDemoEmbassy()" style="border-color:#a855f733">
+      <span style="font-size:24px">🎬</span>
+      <div><div class="lbl">Demo Phỏng vấn Visa</div><div class="dsc">Xem mẫu phỏng vấn Sprachvisum • 4 Phase • Hỏi đáp thực tế • Không cần API key</div></div>
+      <span style="margin-left:auto;color:#a855f7;font-size:18px">→</span>
     </button>
     <div style="color:#1e293b;font-size:12px;display:flex;gap:24px;margin-top:8px;text-align:center;flex-wrap:wrap;justify-content:center;">
       <span>🎓 Chuẩn TELC B1 chính thức</span><span>🎙️ Nhận diện giọng nói</span><span>🔊 AI đọc tiếng Đức</span><span>🇻🇳 Phản hồi tiếng Việt</span><span>📊 Lưu lịch sử học</span>
@@ -1337,9 +1353,77 @@ const TELC_PARTS={
   teil3: "Teil 3: Gemeinsam etwas planen (5-6 Min)"
 };
 
+const EMBASSY_PHASES = {
+  phase1: "Phase 1: Persönliche Daten",
+  phase2: "Phase 2: Sprachkurs & Motivation",
+  phase3: "Phase 3: Pläne & Finanzen",
+  phase4: "Phase 4: Fähigkeiten & Risiken"
+};
+
+const EMBASSY_STARTERS = {
+  phase1: "Guten Morgen. Bitte setzen Sie sich. Ich bin der Sachbearbeiter für Sprachvisa. Zunächst brauche ich einige persönliche Angaben. Wie heißen Sie und wie alt sind Sie?",
+  phase2: "Gut, danke. Jetzt möchte ich über Ihre Deutschkenntnisse und Ihre Motivation sprechen. Welches Sprachniveau haben Sie und wo haben Sie Deutsch gelernt?",
+  phase3: "Verstehe. Jetzt kommen wir zu Ihren Plänen und der Finanzierung. Was genau möchten Sie in Deutschland machen und wie finanzieren Sie Ihren Aufenthalt?",
+  phase4: "Noch ein paar letzte Fragen. Was qualifiziert Sie besonders für dieses Visum und was machen Sie, wenn etwas schiefgeht?"
+};
+
+const EMBASSY_PHRASE_BANK = {
+  phase1: {
+    "Persönliche Angaben": [
+      { de: "Ich heiße... und bin... Jahre alt.", vn: "Ten va tuoi" },
+      { de: "Ich bin ledig / verheiratet.", vn: "Tinh trang hon nhan" },
+      { de: "Ich habe einen Abschluss in...", vn: "Bang cap" },
+      { de: "Meine Familie wohnt in...", vn: "Gia dinh o dau" },
+      { de: "Ich komme aus... und wohne derzeit in...", vn: "Que va noi o hien tai" }
+    ],
+    "Familie & Bildung": [
+      { de: "Meine Eltern arbeiten als...", vn: "Nghe nghiep bo me" },
+      { de: "Ich habe... Geschwister.", vn: "So anh chi em" },
+      { de: "Ich habe... an der Universität... studiert.", vn: "Nganh hoc va truong" }
+    ]
+  },
+  phase2: {
+    "Sprachkenntnisse": [
+      { de: "Ich habe das Niveau B1 am... bestanden.", vn: "Dat trinh do B1 o dau" },
+      { de: "Ich lerne seit... Monaten Deutsch.", vn: "Hoc tieng Duc bao lau" },
+      { de: "Mein Kurs war bei... (Goethe/VHS).", vn: "Hoc o co so nao" }
+    ],
+    "Motivation": [
+      { de: "Ich möchte in Deutschland studieren, weil...", vn: "Ly do muon hoc o Duc" },
+      { de: "Deutschland hat die besten... Programme.", vn: "Duc co chuong trinh tot nhat" },
+      { de: "Ich interessiere mich für den Studiengang...", vn: "Quan tam nganh hoc..." }
+    ]
+  },
+  phase3: {
+    "Finanzierung": [
+      { de: "Ich habe ein Sperrkonto mit... Euro.", vn: "Tai khoan phong toa" },
+      { de: "Meine Eltern finanzieren meinen Aufenthalt.", vn: "Bo me tai tro" },
+      { de: "Ich habe eine Finanzierungsbestätigung von...", vn: "Xac nhan tai chinh" }
+    ],
+    "Unterkunft & Pläne": [
+      { de: "Ich habe bereits ein Zimmer in... gefunden.", vn: "Da tim duoc phong" },
+      { de: "Ich werde am... anfangen zu studieren.", vn: "Se bat dau hoc khi nao" },
+      { de: "Nach dem Studium plane ich...", vn: "Ke hoach sau khi hoc" }
+    ]
+  },
+  phase4: {
+    "Qualifikationen": [
+      { de: "Ich habe bereits Erfahrung in...", vn: "Da co kinh nghiem ve..." },
+      { de: "Meine bisherigen Leistungen zeigen, dass...", vn: "Thanh tich cho thay..." },
+      { de: "Ich bin besonders motiviert, weil...", vn: "Dong luc dac biet vi..." }
+    ],
+    "Rückkehr & Risiken": [
+      { de: "Nach meinem Aufenthalt werde ich nach... zurückkehren.", vn: "Se quay ve sau khi..." },
+      { de: "In meinem Heimatland habe ich... (Job/Familie).", vn: "O que co viec/gia dinh" },
+      { de: "Falls etwas schiefgeht, werde ich...", vn: "Neu co van de, se..." },
+      { de: "Ich habe einen Plan B: ...", vn: "Ke hoach du phong" }
+    ]
+  }
+};
+
 const TOPICS={
   telc:["Teil 1: Kontaktaufnahme","Teil 2: Gespräch über Thema","Teil 3: Gemeinsam planen"],
-  embassy:["Reisezweck","Finanzierung","Unterkunft","Rückkehr","Deutschkenntnisse"],
+  embassy:["Phase 1: Persönliche Daten","Phase 2: Sprachkurs & Motivation","Phase 3: Pläne & Finanzen","Phase 4: Fähigkeiten & Risiken"],
   grammar:["Konjunktiv II","Passiv","Relativsätze","Perfekt vs Präteritum","Modalverben"],
 };
 
@@ -1586,11 +1670,98 @@ const DEMO_EXAM_SCRIPT = {
   }
 };
 
-function getPrompt(mode, withVNFeedback, telcPart = null) {
+const DEMO_EMBASSY_SPEAKERS = {
+  beamter:       { label: "Beamter",        emoji: "\ud83d\udc68\u200d\ud83d\udcbc", color: "#a855f7" },
+  antragsteller: { label: "Antragsteller",  emoji: "\ud83e\uddd1",                   color: "#22c55e" }
+};
+
+const DEMO_EMBASSY_SCRIPT = {
+  phase1: {
+    title: "Phase 1: Persönliche Daten",
+    description: "Tên, tuổi, gia đình, học vấn, sở thích (19 câu hỏi thực tế)",
+    messages: [
+      { speaker: "beamter", de: "Guten Morgen. Bitte setzen Sie sich. Ich bin Herr Weber, zuständig für Sprachvisa. Darf ich Ihren Reisepass und Ihre Unterlagen sehen?", vn: "Beamter chào và yêu cầu xem giấy tờ. Luôn dùng 'Sie' (trang trọng). Đây là bước đầu tiên.", tip: "Mang đầy đủ hồ sơ: hộ chiếu, đơn xin visa, ảnh, bảo hiểm, tài chính." },
+      { speaker: "antragsteller", de: "Guten Morgen, Herr Weber. Ja, natürlich. Hier ist mein Reisepass und hier sind alle meine Unterlagen: der Antrag, mein Zertifikat und die Finanzierungsnachweise.", vn: "Chào lịch sự, đưa giấy tờ. Liệt kê cụ thể các giấy tờ mình mang theo.", tip: "Luôn chuẩn bị sẵn giấy tờ theo thứ tự, thể hiện sự chuyên nghiệp." },
+      { speaker: "beamter", de: "Danke. Wie heißen Sie mit vollem Namen, und wann sind Sie geboren?", vn: "Câu hỏi cơ bản: họ tên đầy đủ và ngày sinh." },
+      { speaker: "antragsteller", de: "Mein Name ist Nguyen Thanh Minh. Ich bin am fünfzehnten März neunzehnhundertachtundneunzig in Ho-Chi-Minh-Stadt geboren. Ich bin sechsundzwanzig Jahre alt.", vn: "Trả lời đầy đủ: tên, ngày sinh, nơi sinh, tuổi. Dùng số đếm tiếng Đức cho ngày tháng.", tip: "Học cách nói ngày tháng bằng tiếng Đức: 'am + Ordinalzahl + Monat + Jahr'." },
+      { speaker: "beamter", de: "Was ist Ihr Familienstand? Haben Sie Geschwister?", vn: "Familienstand = tình trạng hôn nhân. Geschwister = anh chị em." },
+      { speaker: "antragsteller", de: "Ich bin ledig. Ich habe eine ältere Schwester und einen jüngeren Bruder. Meine Schwester ist Ärztin und arbeitet in einem Krankenhaus. Mein Bruder studiert noch Informatik an der Universität.", vn: "Trả lời chi tiết về gia đình. 'Ledig' = độc thân. Kể thêm về nghề nghiệp anh chị em thể hiện gia đình ổn định.", tip: "Nói về nghề nghiệp gia đình cho thấy nền tảng gia đình vững chắc - điểm cộng với Beamter." },
+      { speaker: "beamter", de: "Was haben Sie studiert? Welchen Abschluss haben Sie?", vn: "Câu hỏi về học vấn. Abschluss = bằng cấp." },
+      { speaker: "antragsteller", de: "Ich habe Betriebswirtschaftslehre an der Wirtschaftsuniversität Ho-Chi-Minh-Stadt studiert. Ich habe meinen Bachelorabschluss im Jahr zweitausendzwanzig gemacht. Meine Abschlussnote war sehr gut.", vn: "Betriebswirtschaftslehre = Quản trị kinh doanh. Nêu trường, ngành, năm tốt nghiệp, và kết quả.", tip: "Chuẩn bị bản dịch công chứng bằng cấp sang tiếng Đức." },
+      { speaker: "beamter", de: "Was arbeiten Sie zurzeit? Seit wann?", vn: "Câu hỏi về công việc hiện tại. 'Seit wann' = từ khi nào." },
+      { speaker: "antragsteller", de: "Ich arbeite seit drei Jahren als Marketing-Spezialist bei einer internationalen Firma in Ho-Chi-Minh-Stadt. Ich bin verantwortlich für Online-Marketing und Kundenbetreuung. Vor diesem Job hatte ich ein Praktikum bei einer deutschen Firma.", vn: "Mô tả công việc chi tiết: vị trí, công ty, thời gian, trách nhiệm. 'Seit + Dativ' cho thời gian. Nhắc đến kinh nghiệm với công ty Đức = điểm cộng.", tip: "Nhấn mạnh kết nối với Đức trong công việc hiện tại nếu có." },
+      { speaker: "beamter", de: "Und was machen Ihre Eltern beruflich?", vn: "Câu hỏi về nghề nghiệp bố mẹ - để đánh giá khả năng tài chính gia đình." },
+      { speaker: "antragsteller", de: "Mein Vater ist Ingenieur bei einer Baufirma. Er arbeitet dort seit über zwanzig Jahren. Meine Mutter ist Lehrerin an einer Oberschule. Sie unterrichtet Mathematik. Beide haben ein stabiles Einkommen.", vn: "Nêu nghề nghiệp cụ thể, thời gian làm việc. 'Stabiles Einkommen' = thu nhập ổn định - rất quan trọng cho visa.", tip: "Beamter đánh giá xem gia đình có đủ khả năng tài chính không. Nêu rõ nghề nghiệp ổn định." }
+    ]
+  },
+  phase2: {
+    title: "Phase 2: Sprachkurs & Motivation",
+    description: "Trình độ tiếng Đức, khóa học, lý do chọn Đức (31 câu hỏi thực tế)",
+    messages: [
+      { speaker: "beamter", de: "Gut, kommen wir zu Ihren Deutschkenntnissen. Welches Sprachniveau haben Sie? Haben Sie ein Zertifikat?", vn: "Beamter hỏi về trình độ tiếng Đức. Cần có chứng chỉ chính thức.", tip: "Luôn mang theo bản gốc chứng chỉ tiếng Đức (Goethe, TELC, ÖSD)." },
+      { speaker: "antragsteller", de: "Ja, ich habe das Goethe-Zertifikat B1. Ich habe die Prüfung im Januar dieses Jahres bestanden. Hier ist mein Zertifikat. Ich habe insgesamt zweihundertfünfzig von dreihundert Punkten erreicht.", vn: "Nêu loại chứng chỉ, thời gian đạt, và điểm số. Đưa bản gốc. 'Bestanden' = đã đỗ.", tip: "Điểm số cụ thể thể hiện sự chuẩn bị kỹ lưỡng." },
+      { speaker: "beamter", de: "Wo und wie lange haben Sie Deutsch gelernt?", vn: "Câu hỏi về quá trình học tiếng Đức." },
+      { speaker: "antragsteller", de: "Ich lerne seit eineinhalb Jahren Deutsch. Zuerst habe ich sechs Monate bei einem privaten Sprachinstitut in Ho-Chi-Minh-Stadt gelernt, von A1 bis A2. Dann habe ich am Goethe-Institut einen Intensivkurs B1 besucht. Das war acht Monate lang, vier Stunden pro Tag.", vn: "Mô tả chi tiết quá trình học: thời gian, cơ sở, cấp độ. 'Eineinhalb Jahre' = 1.5 năm. 'Intensivkurs' = khóa chuyên sâu.", tip: "Beamter muốn thấy lộ trình học rõ ràng và liên tục." },
+      { speaker: "beamter", de: "Warum wollen Sie nach Deutschland? Warum nicht in Vietnam weiter Deutsch lernen?", vn: "Câu hỏi quan trọng nhất! Tại sao phải đến Đức? Beamter tìm lý do thuyết phục.", tip: "Đây là câu hỏi quyết định. Cần có lý do cụ thể, không nói chung chung." },
+      { speaker: "antragsteller", de: "Ich möchte nach Deutschland, weil ich dort mein Deutsch schneller verbessern kann. In Vietnam kann ich nur im Unterricht Deutsch sprechen, aber in Deutschland kann ich die Sprache jeden Tag benutzen - beim Einkaufen, mit Nachbarn, überall. Außerdem möchte ich nach dem Sprachkurs an der Technischen Universität München Betriebswirtschaft im Master studieren. Dafür brauche ich mindestens C1-Niveau.", vn: "Lý do cụ thể: (1) học nhanh hơn vì môi trường, (2) mục tiêu rõ ràng - Master ở TUM cần C1. Dùng 'Außerdem' để thêm lý do.", tip: "Liên kết Sprachvisum với kế hoạch học tập cụ thể (trường, ngành) rất thuyết phục." },
+      { speaker: "beamter", de: "Warum gerade Deutschland und nicht ein anderes deutschsprachiges Land wie Österreich oder die Schweiz?", vn: "Câu hỏi thử thách: tại sao Đức mà không phải Áo/Thụy Sĩ? Beamter kiểm tra sự nghiêm túc.", tip: "Chuẩn bị câu trả lời cụ thể về Đức, đừng nói chung chung." },
+      { speaker: "antragsteller", de: "Deutschland hat die besten technischen Universitäten in Europa, besonders die TU München und die TU Berlin. Außerdem ist das Studium in Deutschland fast kostenlos - man zahlt nur den Semesterbeitrag. In der Schweiz kostet das Studium viel mehr. Und ich habe schon Kontakte zu deutschen Firmen durch meine Arbeit.", vn: "3 lý do cụ thể: (1) chất lượng đại học, (2) học phí thấp, (3) đã có quan hệ với công ty Đức. So sánh với Thụy Sĩ thể hiện đã tìm hiểu.", tip: "Nêu lý do so sánh cụ thể cho thấy bạn đã research kỹ." },
+      { speaker: "beamter", de: "An welcher Sprachschule in Deutschland möchten Sie Ihren Kurs machen? Haben Sie schon eine Anmeldung?", vn: "Câu hỏi về trường ngôn ngữ cụ thể. Cần có giấy đăng ký.", tip: "Phải có Zulassung (giấy nhập học) từ trường ngôn ngữ." },
+      { speaker: "antragsteller", de: "Ich habe mich am Goethe-Institut München für einen Intensivkurs C1 angemeldet. Der Kurs beginnt am ersten September und dauert sechs Monate. Hier ist meine Kursbestätigung mit der Kursnummer und dem Zahlungsnachweis. Ich habe bereits die Kursgebühr von zweitausend Euro bezahlt.", vn: "Nêu cụ thể: tên trường, thành phố, cấp độ, ngày bắt đầu, thời gian, và đã thanh toán. 'Kursbestätigung' = xác nhận khóa học.", tip: "Đã thanh toán kursgebühr cho thấy cam kết nghiêm túc - Beamter đánh giá cao." },
+      { speaker: "beamter", de: "Kennen Sie jemanden in Deutschland? Haben Sie Verwandte oder Freunde dort?", vn: "Câu hỏi về quan hệ ở Đức. Beamter đánh giá mạng lưới hỗ trợ và rủi ro ở lại bất hợp pháp." },
+      { speaker: "antragsteller", de: "Ja, ich habe einen ehemaligen Kollegen, der jetzt in München lebt. Er arbeitet bei Siemens als Ingenieur. Er hat mir geholfen, eine Unterkunft zu finden. Aber meine ganze Familie - meine Eltern, meine Geschwister - lebt in Vietnam. Meine Wurzeln sind in Vietnam.", vn: "Có người quen giúp đỡ thực tế, nhưng nhấn mạnh gia đình ở Việt Nam. 'Wurzeln' = gốc rễ. Điều này cho thấy sẽ quay về.", tip: "Cân bằng: có hỗ trợ ở Đức nhưng gắn bó với quê nhà = câu trả lời hoàn hảo." }
+    ]
+  },
+  phase3: {
+    title: "Phase 3: Pläne & Finanzen",
+    description: "Kế hoạch, Sperrkonto, nhà ở, bảo hiểm (39 câu hỏi thực tế)",
+    messages: [
+      { speaker: "beamter", de: "Jetzt kommen wir zu den Finanzen. Das ist sehr wichtig. Wie finanzieren Sie Ihren Aufenthalt in Deutschland?", vn: "Phần tài chính - QUAN TRỌNG NHẤT. Beamter sẽ rất kỹ ở phần này.", tip: "Chuẩn bị kỹ: Sperrkonto, Verpflichtungserklärung, thu nhập bố mẹ." },
+      { speaker: "antragsteller", de: "Ich habe ein Sperrkonto bei der Deutschen Bank eröffnet. Auf dem Konto sind elfeinhalbtausend Euro. Das entspricht dem aktuellen Betrag von neunhundertdreißig Euro pro Monat für zwölf Monate. Hier ist die Bestätigung von der Bank.", vn: "Nêu cụ thể: tên ngân hàng, số tiền (11.500€ = 934€/tháng x 12), đưa giấy xác nhận. 'Sperrkonto' = tài khoản phong tỏa.", tip: "Số tiền Sperrkonto thay đổi hàng năm. Năm 2024: 11.208€. Kiểm tra số mới nhất!" },
+      { speaker: "beamter", de: "Woher kommt das Geld auf dem Sperrkonto? Wer hat es eingezahlt?", vn: "Beamter kiểm tra nguồn gốc tiền. Rất NGHIÊM NGẶT ở câu hỏi này.", tip: "Phải chứng minh nguồn tiền hợp pháp. Đừng nói mập mờ." },
+      { speaker: "antragsteller", de: "Das Geld kommt von meinen Ersparnissen und von meinen Eltern. Ich habe drei Jahre lang gearbeitet und monatlich etwa zweihundert Euro gespart. Meine Eltern haben den Rest beigesteuert. Mein Vater hat ein monatliches Einkommen von ungefähr zweitausend Euro als Ingenieur. Hier sind die Kontoauszüge der letzten drei Monate von meinem Konto und vom Konto meiner Eltern.", vn: "Chi tiết: tiết kiệm bản thân + hỗ trợ bố mẹ. Nêu thu nhập bố mẹ. Đưa sao kê ngân hàng 3 tháng gần nhất.", tip: "Kontoauszüge (sao kê ngân hàng) là bằng chứng mạnh nhất. Mang bản gốc." },
+      { speaker: "beamter", de: "Haben Sie schon eine Unterkunft in Deutschland? Wo werden Sie wohnen?", vn: "Câu hỏi về chỗ ở. Cần có địa chỉ cụ thể." },
+      { speaker: "antragsteller", de: "Ja, ich habe ein Zimmer in einem Studentenwohnheim in München gemietet. Das Wohnheim heißt 'Studentenstadt Freimann'. Die Miete beträgt dreihundertfünfzig Euro pro Monat, inklusive Nebenkosten. Hier ist mein Mietvertrag. Mein Kollege hat mir bei der Bewerbung geholfen.", vn: "Nêu cụ thể: tên ký túc xá, địa chỉ, giá thuê (350€ kể cả phụ phí). 'Mietvertrag' = hợp đồng thuê nhà.", tip: "Studentenwohnheim qua Studentenwerk là lựa chọn tốt nhất - Beamter biết đây là hợp pháp." },
+      { speaker: "beamter", de: "Haben Sie eine Krankenversicherung für Deutschland? Welche?", vn: "Bảo hiểm y tế là bắt buộc cho visa." },
+      { speaker: "antragsteller", de: "Ja, ich habe eine Reisekrankenversicherung bei der MAWISTA abgeschlossen. Die Versicherung gilt für die gesamte Dauer meines Aufenthalts - zwölf Monate. Wenn ich später an der Universität eingeschrieben bin, werde ich zur gesetzlichen Krankenversicherung bei der AOK wechseln.", vn: "Có bảo hiểm MAWISTA cho Sprachvisum. Kế hoạch chuyển sang AOK khi vào đại học. 'Gesetzliche Krankenversicherung' = bảo hiểm y tế pháp định.", tip: "Cho Sprachvisum: bảo hiểm du lịch (MAWISTA, Care Concept). Cho Studium: AOK, TK." },
+      { speaker: "beamter", de: "Wie lange planen Sie genau in Deutschland zu bleiben? Was passiert, wenn Ihr Geld nicht reicht?", vn: "Câu hỏi kép: thời gian ở và kế hoạch dự phòng tài chính. Beamter thử xem bạn có thực tế không.", tip: "Trả lời cả hai câu hỏi. Cho thấy bạn đã tính toán kỹ." },
+      { speaker: "antragsteller", de: "Ich plane, zwölf Monate in Deutschland zu bleiben - für den Sprachkurs am Goethe-Institut. Falls mein Geld nicht reicht, haben meine Eltern zugesagt, mir zusätzliches Geld zu überweisen. Mein Vater hat auch eine Verpflichtungserklärung unterschrieben. Außerdem habe ich in Vietnam noch Ersparnisse von ungefähr dreitausend Euro auf meinem Konto.", vn: "Kế hoạch rõ ràng: 12 tháng. Dự phòng: bố mẹ hỗ trợ thêm + Verpflichtungserklärung + tiền tiết kiệm còn lại. 3 lớp bảo vệ tài chính.", tip: "Verpflichtungserklärung = cam kết tài chính của người bảo lãnh. Rất có giá trị với Beamter." }
+    ]
+  },
+  phase4: {
+    title: "Phase 4: Fähigkeiten & Risiken",
+    description: "Năng lực, kế hoạch quay về, câu hỏi phản xạ (24 + 30 câu hỏi nhanh)",
+    messages: [
+      { speaker: "beamter", de: "Gut. Was möchten Sie nach dem Sprachkurs machen? Was sind Ihre langfristigen Pläne?", vn: "Câu hỏi về kế hoạch dài hạn. Beamter đánh giá mục tiêu nghiêm túc.", tip: "Kế hoạch phải logic: Sprachkurs → Studium → (Karriere) → Rückkehr." },
+      { speaker: "antragsteller", de: "Nach dem Sprachkurs möchte ich mich an der TU München für den Masterstudiengang Betriebswirtschaft bewerben. Das Studium dauert zwei Jahre. Nach dem Abschluss möchte ich ein bis zwei Jahre Berufserfahrung in Deutschland sammeln und dann nach Vietnam zurückkehren, um in einer internationalen Firma zu arbeiten.", vn: "Kế hoạch rõ ràng: Sprachkurs → Master TUM → 1-2 năm kinh nghiệm → về Việt Nam. Logic và thực tế.", tip: "Nhấn mạnh kế hoạch quay về = giảm nghi ngờ nhập cư bất hợp pháp." },
+      { speaker: "beamter", de: "Was bindet Sie an Vietnam? Warum sollten Sie zurückkehren und nicht einfach in Deutschland bleiben?", vn: "Câu hỏi QUAN TRỌNG: Beamter kiểm tra rủi ro ở lại bất hợp pháp. Cần lý do mạnh.", tip: "Nêu những ràng buộc cụ thể ở Việt Nam: gia đình, tài sản, công việc." },
+      { speaker: "antragsteller", de: "Meine gesamte Familie lebt in Vietnam - meine Eltern, meine Geschwister. Meine Eltern werden älter und ich bin als ältester Sohn verantwortlich für sie. Außerdem hat mein Vater eine Baufirma, die ich in Zukunft übernehmen möchte. Mit einem deutschen Masterabschluss und internationaler Erfahrung kann ich die Firma besser führen und international expandieren.", vn: "Ràng buộc mạnh: (1) trách nhiệm gia đình, (2) công ty gia đình sẽ tiếp quản, (3) bằng Đức giúp phát triển công ty. Rất thuyết phục!", tip: "Công ty/tài sản gia đình là lý do quay về mạnh nhất đối với Beamter." },
+      { speaker: "beamter", de: "Was machen Sie, wenn Sie den Sprachkurs nicht bestehen? Oder wenn die Universität Sie nicht annimmt?", vn: "Câu hỏi về kịch bản xấu nhất. Beamter xem bạn có thực tế không.", tip: "Phải có kế hoạch B. Không nói 'Tôi chắc chắn đỗ' - quá tự tin." },
+      { speaker: "antragsteller", de: "Falls ich den C1-Kurs beim ersten Mal nicht bestehe, würde ich den Kurs wiederholen. Ich habe genug finanzielle Mittel für weitere sechs Monate. Falls die TU München mich nicht annimmt, werde ich mich auch an anderen Universitäten bewerben, zum Beispiel an der LMU München oder der Universität Stuttgart. Und wenn alle Bewerbungen scheitern, kehre ich nach Vietnam zurück und arbeite weiter in meinem aktuellen Job.", vn: "Plan B chi tiết: (1) lặp lại khóa, (2) nộp trường khác, (3) quay về Việt Nam nếu không được. 'Würde wiederholen' = Konjunktiv II cho kế hoạch giả định.", tip: "Kế hoạch B + kế hoạch C + sẵn sàng quay về = câu trả lời hoàn hảo." },
+      { speaker: "beamter", de: "Noch ein paar schnelle Fragen: Haben Sie schon ein Rückflugticket? Haben Sie Immobilien in Vietnam?", vn: "Câu hỏi nhanh để kiểm tra phản xạ. Trả lời nhanh, trung thực.", tip: "Câu hỏi nhanh: không cần suy nghĩ lâu, trả lời thẳng thắn." },
+      { speaker: "antragsteller", de: "Ich habe noch kein Rückflugticket, weil ich flexibel bleiben möchte - aber ich werde es vor der Abreise buchen. Was Immobilien betrifft: Meine Familie besitzt ein Haus in Ho-Chi-Minh-Stadt und ein Grundstück auf dem Land. Das Haus gehört meinen Eltern, aber ich bin als Erbe eingetragen.", vn: "Ehrlich: chưa có vé = chấp nhận được nếu giải thích. Có bất động sản gia đình = ràng buộc mạnh. 'Erbe' = người thừa kế.", tip: "Tài sản gia đình ở Việt Nam = bằng chứng sẽ quay về. Rất quan trọng!" },
+      { speaker: "beamter", de: "Letzte Frage: Erzählen Sie mir auf Deutsch etwas über Ihre Heimatstadt. Ich möchte Ihr Deutsch testen.", vn: "Beamter kiểm tra trình độ tiếng Đức thực tế. Nói tự nhiên, đừng học thuộc.", tip: "Đây là bài test thực tế. Nói tự nhiên, dùng câu B1, đừng cố dùng từ quá khó." },
+      { speaker: "antragsteller", de: "Ich komme aus Ho-Chi-Minh-Stadt. Das ist die größte Stadt in Vietnam mit über neun Millionen Einwohnern. Die Stadt ist sehr lebendig und modern. Es gibt viele Hochhäuser, Einkaufszentren und Restaurants. Das Essen dort ist besonders gut - ich empfehle Pho und Banh Mi! Das Wetter ist das ganze Jahr warm, manchmal zu heiß. Ich liebe meine Stadt, obwohl der Verkehr manchmal chaotisch ist.", vn: "Nói tự nhiên về thành phố: dân số, đặc điểm, ẩm thực, thời tiết, cảm nhận cá nhân. Dùng Komparativ/Superlativ và 'obwohl' (B1-Strukturen).", tip: "Beamter nghe để đánh giá: phát âm, từ vựng, ngữ pháp, sự tự tin. Nói thoải mái!" },
+      { speaker: "beamter", de: "Vielen Dank, Herr Nguyen. Ihr Deutsch ist gut. Wir werden Ihren Antrag prüfen. Sie bekommen in vier bis sechs Wochen eine Antwort. Auf Wiedersehen.", vn: "Beamter kết thúc: khen tiếng Đức, thông báo thời gian xét duyệt (4-6 tuần). 'Antrag prüfen' = xem xét đơn.", tip: "Phỏng vấn kết thúc. Cảm ơn lịch sự và ra về." },
+      { speaker: "antragsteller", de: "Vielen Dank, Herr Weber. Ich freue mich auf Ihre Antwort. Auf Wiedersehen und einen schönen Tag noch!", vn: "Cảm ơn lịch sự. 'Ich freue mich auf' = tôi mong đợi. 'Einen schönen Tag noch' = chúc một ngày tốt lành.", tip: "Kết thúc tích cực, lịch sự. Ấn tượng cuối cùng rất quan trọng!" }
+    ]
+  }
+};
+
+function getPrompt(mode, withVNFeedback, telcPart = null, embassyPhase = null) {
   if (mode === 'telc') {
     let prompt = getTELCPrompt(telcPart || 'teil1');
     if (withVNFeedback) {
       return prompt + " Format: Deutsche Antwort ZUERST, dann neue Zeile [FEEDBACK]: Feedback auf Vietnamesisch mit B1-spezifischen Tipps. Max 100 Wörter.";
+    } else {
+      return prompt + " Antworte nur auf Deutsch, kein vietnamesisches Feedback.";
+    }
+  }
+
+  if (mode === 'embassy' && embassyPhase) {
+    let prompt = getEmbassyPrompt(embassyPhase);
+    if (withVNFeedback) {
+      return prompt + " Format: Antwort auf Deutsch ZUERST, dann neue Zeile [FEEDBACK]: Bewerte auf Vietnamesisch ob die Antwort überzeugend für den Beamten ist. Gib konkrete Verbesserungsvorschläge. Max 80 Wörter.";
     } else {
       return prompt + " Antworte nur auf Deutsch, kein vietnamesisches Feedback.";
     }
@@ -1702,6 +1873,117 @@ WICHTIG:
   return prompts[part] || prompts.teil1;
 }
 
+function getEmbassyPrompt(phase) {
+  const prompts = {
+    phase1: `Du bist ein deutscher Botschaftsbeamter (Sachbearbeiter) bei einem Sprachvisum-Interview. Phase 1: Persönliche Daten.
+
+ROLLE: Formell, professionell, Sie-Form. Stelle EINE Frage auf einmal. Warte auf die Antwort, bevor du die nächste Frage stellst.
+
+FRAGEN FÜR DIESE PHASE (stelle sie natürlich, nicht als Liste):
+1. Wie heißen Sie? Wie alt sind Sie?
+2. Was ist Ihr Familienstand? Haben Sie Kinder?
+3. Wo wohnen Sie derzeit?
+4. Was haben Sie studiert? Welchen Abschluss haben Sie?
+5. Was arbeiten Sie zurzeit? Seit wann?
+6. Was machen Sie in Ihrer Freizeit?
+7. Haben Sie Geschwister? Was machen Ihre Eltern beruflich?
+8. Waren Sie schon einmal im Ausland?
+
+VERHALTEN:
+- Sei höflich aber sachlich, wie ein echter Beamter
+- Stelle Nachfragen, wenn Antworten vage oder zu kurz sind
+- Zeige angemessenes Interesse, aber keine übermäßige Freundlichkeit
+
+ANTWORT-ÜBERPRÜFUNG:
+- Wenn die Antwort zu kurz ist (unter 5 Wörter): Sage "Können Sie das genauer erklären?" und gib eine Beispielantwort in Klammern.
+  Beispiel: Frage "Was arbeiten Sie?" → Antwort "IT" → "IT ist ein weites Feld. Können Sie das genauer beschreiben? (Sie könnten sagen: 'Ich arbeite als Softwareentwickler bei der Firma... seit zwei Jahren.')"
+- Wenn die Antwort nicht zur Frage passt: Wiederhole die Frage freundlich.`,
+
+    phase2: `Du bist ein deutscher Botschaftsbeamter bei einem Sprachvisum-Interview. Phase 2: Sprachkurs und Motivation.
+
+ROLLE: Formell, Sie-Form. Stelle EINE Frage auf einmal. Sei etwas prüfender als in Phase 1 - du willst die Ernsthaftigkeit der Motivation einschätzen.
+
+FRAGEN FÜR DIESE PHASE:
+1. Welches Deutsch-Niveau haben Sie? Haben Sie ein Zertifikat?
+2. Wo haben Sie Deutsch gelernt? Wie lange?
+3. Warum wollen Sie nach Deutschland? Was ist Ihre Motivation?
+4. Warum gerade Deutschland und nicht ein anderes Land?
+5. Haben Sie sich über Sprachkurse in Deutschland informiert? Welche?
+6. An welcher Sprachschule möchten Sie Ihren Kurs machen?
+7. Was möchten Sie nach dem Sprachkurs machen?
+8. Kennen Sie jemanden in Deutschland?
+
+VERHALTEN:
+- Hinterfrage die Motivation kritisch: "Warum genau Deutschland?"
+- Bei vagen Antworten nachhaken: "Das klingt etwas allgemein. Was genau meinen Sie?"
+- Prüfe, ob der Antragsteller sich wirklich informiert hat
+
+ANTWORT-ÜBERPRÜFUNG:
+- Zu kurze Antworten: "Ich brauche mehr Details." + Beispielantwort in Klammern.
+- Unklare Motivation: "Das überzeugt mich noch nicht ganz. Können Sie konkreter werden?"
+  Beispiel: "Ich mag Deutschland" → "Das freut mich, aber ich brauche einen konkreteren Grund. (Sie könnten sagen: 'Ich möchte an der TU München Informatik studieren, und dafür brauche ich C1-Deutschkenntnisse.')"`,
+
+    phase3: `Du bist ein deutscher Botschaftsbeamter bei einem Sprachvisum-Interview. Phase 3: Pläne und Finanzen.
+
+ROLLE: Formell, Sie-Form. Stelle EINE Frage auf einmal. Sei in dieser Phase BESONDERS SKEPTISCH und genau - Finanzen und konkrete Pläne sind der kritischste Teil des Interviews.
+
+FRAGEN FÜR DIESE PHASE:
+1. Wie finanzieren Sie Ihren Aufenthalt in Deutschland?
+2. Haben Sie ein Sperrkonto? Wie viel Geld ist darauf?
+3. Wer hat das Geld eingezahlt? Woher kommt das Geld?
+4. Wo werden Sie in Deutschland wohnen? Haben Sie schon eine Unterkunft?
+5. Haben Sie eine Krankenversicherung für Deutschland?
+6. Wie lange planen Sie in Deutschland zu bleiben?
+7. Was machen Sie, wenn das Geld nicht reicht?
+8. Haben Sie einen Mietvertrag oder eine Wohnungsbestätigung?
+
+VERHALTEN:
+- Sei STRENG bei finanziellen Fragen - das ist der wichtigste Teil
+- Hake nach bei unklaren Geldquellen: "Wie können Ihre Eltern das finanzieren? Was arbeiten sie?"
+- Prüfe auf Widersprüche in den Angaben
+- Zeige professionelle Skepsis: "Das müssen Sie nachweisen können."
+
+ANTWORT-ÜBERPRÜFUNG:
+- Ungenaue Finanzangaben: "Das reicht mir so nicht. Ich brauche genaue Zahlen."
+  Beispiel: "Meine Eltern zahlen" → "Wie genau? Haben Sie eine Verpflichtungserklärung? Wie hoch ist das monatliche Einkommen Ihrer Eltern? (Sie könnten sagen: 'Mein Vater ist Ingenieur und verdient... pro Monat. Er hat eine Verpflichtungserklärung unterschrieben.')"
+- Fehlende Dokumente: "Haben Sie einen Nachweis dafür?"`,
+
+    phase4: `Du bist ein deutscher Botschaftsbeamter bei einem Sprachvisum-Interview. Phase 4: Fähigkeiten und Risiken.
+
+ROLLE: Formell, Sie-Form. Stelle EINE Frage auf einmal. Diese Phase testet die Rückkehrbereitschaft und prüft auf Einwanderungsabsichten.
+
+FRAGEN FÜR DIESE PHASE:
+1. Was qualifiziert Sie besonders für ein Sprachvisum?
+2. Was werden Sie nach dem Sprachkurs / Studium machen?
+3. Planen Sie, nach Deutschland zurückzukehren? Warum?
+4. Was bindet Sie an Ihr Heimatland?
+5. Haben Sie dort einen Job, auf den Sie zurückkehren?
+6. Was machen Sie, wenn Sie den Sprachkurs nicht bestehen?
+7. Was machen Sie, wenn Ihr Visum nicht verlängert wird?
+8. Möchten Sie langfristig in Deutschland bleiben?
+
+SCHNELLE NACHFRAGEN (stelle 2-3 davon spontan):
+- "Haben Sie schon ein Rückflugticket?"
+- "Haben Sie Immobilien in Ihrem Heimatland?"
+- "Wann haben Sie Ihren letzten Job gekündigt?"
+- "Haben Sie Familie in Deutschland?"
+- "Wie gut sprechen Sie wirklich Deutsch? Erzählen Sie mir etwas auf Deutsch über Ihre Stadt."
+
+VERHALTEN:
+- Sei direkt und stelle auch unbequeme Fragen
+- Teste die Rückkehrbereitschaft: "Was genau zieht Sie zurück in Ihr Heimatland?"
+- Stelle spontane Fragen, um die Reaktionsfähigkeit zu testen
+- Sei professionell aber bestimmt
+
+ANTWORT-ÜBERPRÜFUNG:
+- Vage Rückkehrpläne: "Das klingt nicht sehr überzeugend. Was konkret haben Sie in Ihrem Heimatland?"
+  Beispiel: "Ich komme zurück" → "Warum? Was genau wartet auf Sie? (Sie könnten sagen: 'Ich habe eine feste Stelle bei... die auf mich wartet' oder 'Meine Familie hat ein Geschäft, das ich übernehmen werde.')"
+- Widersprüche: Weise höflich auf Unstimmigkeiten hin.`
+  };
+
+  return prompts[phase] || prompts.phase1;
+}
+
 let API_KEY="",mode=null,msgs=[],autoSpeak=true,vietnameseFeedback=true;
 let isRec=false,recSec=0,recTimer=null,speakIdx=-1,recognition=null,waveAnim=null,waveT=0,isSpeaking=false;
 let isMobile=false,audioUnlocked=false,localTTSFailed=false;
@@ -1709,6 +1991,12 @@ let autoStopTimer=null; // Global timer for auto-stopping recording
 let sessionId=generateSessionId(); // Unique session for this chat
 let currentTELCPart=null; // Track current TELC part (teil1, teil2, teil3)
 let ttsSpeed = 1.2; // Default TTS speed (can be adjusted)
+
+// Embassy interview state
+let currentEmbassyPhase = null; // Track current embassy phase (phase1-phase4)
+let embassySimulationMode = false;
+let embassySimPhaseStart = {}; // {phase1: msgIndex, phase2: msgIndex, ...}
+let embassyUserMsgCount = 0; // Count user messages in current phase for advance hint
 
 // TELC Timer System
 let telcTimer = null;
@@ -1834,6 +2122,10 @@ function selectMode(m){
   sessionId = generateSessionId();
   mode=m;msgs=[];speakIdx=-1;
   currentTELCPart=null; // Reset TELC part
+  currentEmbassyPhase=null; // Reset embassy phase
+  embassySimulationMode=false;
+  embassySimPhaseStart={};
+  embassyUserMsgCount=0;
   const c=COLORS[m];
   document.getElementById("landing").style.display="none";
   const ch=document.getElementById("chat");ch.style.display="flex";ch.style.flexDirection="column";
@@ -1846,6 +2138,14 @@ function selectMode(m){
       <button class="topic-btn" onclick="showTopicPicker('teil2')" style="background:rgba(16,185,129,0.1);border-color:rgba(16,185,129,0.3);">Teil 2: Gespräch über Thema</button>
       <button class="topic-btn" onclick="showTopicPicker('teil3')" style="background:rgba(251,191,36,0.1);border-color:rgba(251,191,36,0.3);">Teil 3: Gemeinsam planen</button>
       <button class="topic-btn" onclick="startFullSimulation()" style="background:rgba(239,68,68,0.1);border-color:rgba(239,68,68,0.3);color:#f87171;font-weight:600;">🏆 Simulation (1→2→3)</button>
+    `;
+  } else if(m === 'embassy') {
+    document.getElementById("topics").innerHTML=`
+      <button class="topic-btn" onclick="startEmbassyPhase('phase1')" style="background:rgba(168,85,247,0.1);border-color:rgba(168,85,247,0.3);">Phase 1: Persönliche Daten</button>
+      <button class="topic-btn" onclick="startEmbassyPhase('phase2')" style="background:rgba(59,130,246,0.1);border-color:rgba(59,130,246,0.3);">Phase 2: Sprachkurs & Motivation</button>
+      <button class="topic-btn" onclick="startEmbassyPhase('phase3')" style="background:rgba(251,191,36,0.1);border-color:rgba(251,191,36,0.3);">Phase 3: Pläne & Finanzen</button>
+      <button class="topic-btn" onclick="startEmbassyPhase('phase4')" style="background:rgba(239,68,68,0.1);border-color:rgba(239,68,68,0.3);">Phase 4: Fähigkeiten & Risiken</button>
+      <button class="topic-btn" onclick="startFullEmbassyInterview()" style="background:rgba(34,197,94,0.1);border-color:rgba(34,197,94,0.3);color:#22c55e;font-weight:600;">🏛️ Vollständiges Interview (1→2→3→4)</button>
     `;
   } else {
     document.getElementById("topics").innerHTML=TOPICS[m].map(t=>
@@ -1872,11 +2172,16 @@ function selectMode(m){
   document.getElementById("messages").innerHTML="";
 
   // Show/hide phrase bank button
-  document.getElementById("phraseBankBtn").style.display = (m === 'telc') ? "inline-block" : "none";
+  document.getElementById("phraseBankBtn").style.display = (m === 'telc' || m === 'embassy') ? "inline-block" : "none";
 
   if(m === 'telc') {
     // For TELC, don't start with generic message, wait for Teil selection
     const welcomeMsg = "Willkommen zur TELC B1 mündlichen Prüfung! Wählen Sie einen Teil aus, um zu beginnen:";
+    addBubble("assistant", welcomeMsg, 0);
+    if(autoSpeak) speak(welcomeMsg, 0);
+  } else if(m === 'embassy') {
+    // For embassy, wait for phase selection
+    const welcomeMsg = "Willkommen beim Visa-Interview! Wählen Sie eine Phase aus oder starten Sie das vollständige Interview:";
     addBubble("assistant", welcomeMsg, 0);
     if(autoSpeak) speak(welcomeMsg, 0);
   } else {
@@ -1898,6 +2203,10 @@ function goBack(){
   // Reset states
   mode=null;msgs=[];
   currentTELCPart=null; // Reset TELC part
+  currentEmbassyPhase=null; // Reset embassy phase
+  embassySimulationMode=false;
+  embassySimPhaseStart={};
+  embassyUserMsgCount=0;
 
   // Reset simulation mode
   telcSimulationMode = false;
@@ -1982,7 +2291,7 @@ function esc(s){const d=document.createElement("div");d.textContent=s;return d.i
 
 // Gọi OpenRouter API qua local proxy
 async function callAPI(messages, systemOverride){
-  const systemPrompt = systemOverride || getPrompt(mode, vietnameseFeedback, currentTELCPart);
+  const systemPrompt = systemOverride || getPrompt(mode, vietnameseFeedback, currentTELCPart, currentEmbassyPhase);
   const res=await fetch("/api",{
     method:"POST",
     headers:{"Content-Type":"application/json","X-Api-Key":API_KEY},
@@ -2022,7 +2331,7 @@ async function sendMsg(content){
   let systemPrompt = null;
   const wordCount = content.trim().split(/\s+/).length;
   if (wordCount < 5) {
-    systemPrompt = getPrompt(mode, vietnameseFeedback, currentTELCPart);
+    systemPrompt = getPrompt(mode, vietnameseFeedback, currentTELCPart, currentEmbassyPhase);
     const lastAI = msgs.filter(m => m.role === 'assistant').slice(-1)[0];
     const lastQuestion = lastAI ? lastAI.content.replace(/\[FEEDBACK\][\s\S]*/i, '').trim() : '';
     systemPrompt += `\n\nWICHTIG: Die letzte Antwort des Kandidaten war SEHR KURZ (nur ${wordCount} Wörter: "${content}"). ` +
@@ -2041,6 +2350,11 @@ async function sendMsg(content){
     saveMessageToDB("assistant", reply);
 
     if(autoSpeak)speak(reply,ai);
+
+    // Embassy: check if we should show advance hint
+    if(mode === 'embassy' && currentEmbassyPhase) {
+      maybeShowEmbassyAdvanceHint();
+    }
   }catch(e){
     hideTyping();
     const ei=msgs.length;
@@ -3383,7 +3697,7 @@ function displayScoringResults(scores) {
 // Show score button when in TELC mode and have conversation
 function updateScoreButtonVisibility() {
   const scoreBtn = document.getElementById("scoreBtn");
-  const shouldShow = currentTELCPart && msgs.length >= 3;
+  const shouldShow = (currentTELCPart || currentEmbassyPhase) && msgs.length >= 3;
 
   if(shouldShow) {
     scoreBtn.style.display = "block";
@@ -3406,12 +3720,20 @@ function togglePhraseBank() {
 }
 
 function renderPhraseBank() {
-  const part = currentTELCPart || 'teil1';
-  const bank = TELC_PHRASE_BANK[part];
+  let bank, label;
+  if(mode === 'embassy') {
+    const phase = currentEmbassyPhase || 'phase1';
+    bank = EMBASSY_PHRASE_BANK[phase];
+    label = phase.toUpperCase();
+  } else {
+    const part = currentTELCPart || 'teil1';
+    bank = TELC_PHRASE_BANK[part];
+    label = part.toUpperCase();
+  }
   if(!bank) return;
 
   let html = '<div style="font-size:11px;color:#64748b;margin-bottom:12px;text-align:center;">' +
-    part.toUpperCase() + ' — Nhấn vào mẫu câu để chèn</div>';
+    label + ' — Nhấn vào mẫu câu để chèn</div>';
 
   for(const category in bank) {
     html += '<div class="phrase-category">';
@@ -3472,6 +3794,198 @@ function restoreTELCTopicButtons() {
     <button class="topic-btn" onclick="showTopicPicker('teil3')" style="background:rgba(251,191,36,0.1);border-color:rgba(251,191,36,0.3);">Teil 3: Gemeinsam planen</button>
     <button class="topic-btn" onclick="startFullSimulation()" style="background:rgba(239,68,68,0.1);border-color:rgba(239,68,68,0.3);color:#f87171;font-weight:600;">&#x1F3C6; Simulation (1\u21922\u21923)</button>
   `;
+}
+
+// ===== Embassy Interview Functions =====
+function startEmbassyPhase(phase) {
+  console.log(`Starting embassy ${phase}`);
+  currentEmbassyPhase = phase;
+  embassyUserMsgCount = 0;
+
+  // In simulation mode: don't clear messages, add separator instead
+  if(embassySimulationMode) {
+    embassySimPhaseStart[phase] = msgs.length;
+    const sep = document.createElement('div');
+    sep.className = 'sim-separator';
+    sep.textContent = '━━━ ' + EMBASSY_PHASES[phase] + ' ━━━';
+    document.getElementById("messages").appendChild(sep);
+    updateEmbassySimProgress(phase);
+  } else {
+    // Clear previous messages and start fresh
+    msgs = [];
+    document.getElementById("messages").innerHTML = "";
+    restoreEmbassyPhaseButtons();
+    updateEmbassyPhaseButtons(phase);
+  }
+  document.getElementById("turnCount").textContent = "0 lượt trả lời";
+
+  // Send the phase starter message
+  const starter = EMBASSY_STARTERS[phase];
+  msgs.push({role: "assistant", content: starter});
+  addBubble("assistant", starter, 0);
+  saveMessageToDB("assistant", starter);
+  if(autoSpeak) speak(starter, 0);
+
+  // Update phrase bank if open
+  const phraseBankPanel = document.getElementById("phraseBankPanel");
+  if(phraseBankPanel && phraseBankPanel.classList.contains("open")) {
+    renderPhraseBank();
+  }
+}
+
+function restoreEmbassyPhaseButtons() {
+  document.getElementById("topics").innerHTML = `
+    <button class="topic-btn" onclick="startEmbassyPhase('phase1')" style="background:rgba(168,85,247,0.1);border-color:rgba(168,85,247,0.3);">Phase 1: Persönliche Daten</button>
+    <button class="topic-btn" onclick="startEmbassyPhase('phase2')" style="background:rgba(59,130,246,0.1);border-color:rgba(59,130,246,0.3);">Phase 2: Sprachkurs & Motivation</button>
+    <button class="topic-btn" onclick="startEmbassyPhase('phase3')" style="background:rgba(251,191,36,0.1);border-color:rgba(251,191,36,0.3);">Phase 3: Pläne & Finanzen</button>
+    <button class="topic-btn" onclick="startEmbassyPhase('phase4')" style="background:rgba(239,68,68,0.1);border-color:rgba(239,68,68,0.3);">Phase 4: Fähigkeiten & Risiken</button>
+    <button class="topic-btn" onclick="startFullEmbassyInterview()" style="background:rgba(34,197,94,0.1);border-color:rgba(34,197,94,0.3);color:#22c55e;font-weight:600;">🏛️ Vollständiges Interview (1→2→3→4)</button>
+  `;
+}
+
+function updateEmbassyPhaseButtons(activePhase) {
+  const buttons = document.querySelectorAll('.topic-btn');
+  const phaseColors = {
+    phase1: 'rgba(168,85,247,0.2)',
+    phase2: 'rgba(59,130,246,0.2)',
+    phase3: 'rgba(251,191,36,0.2)',
+    phase4: 'rgba(239,68,68,0.2)'
+  };
+  const phaseIndex = { phase1: 0, phase2: 1, phase3: 2, phase4: 3 };
+
+  buttons.forEach(btn => {
+    btn.style.opacity = '0.6';
+    btn.style.background = 'rgba(255,255,255,0.05)';
+  });
+
+  const idx = phaseIndex[activePhase];
+  if(idx !== undefined && buttons[idx]) {
+    buttons[idx].style.opacity = '1';
+    buttons[idx].style.background = phaseColors[activePhase];
+  }
+}
+
+function startFullEmbassyInterview() {
+  console.log("🏛️ Starting full embassy interview simulation");
+  embassySimulationMode = true;
+  embassySimPhaseStart = {};
+  msgs = [];
+  document.getElementById("messages").innerHTML = "";
+
+  // Replace phase buttons with progress bar
+  document.getElementById("topics").innerHTML = `
+    <div class="sim-progress">
+      <div class="sim-step active" id="embSimStep1">Phase 1</div>
+      <div class="sim-step-arrow">→</div>
+      <div class="sim-step" id="embSimStep2">Phase 2</div>
+      <div class="sim-step-arrow">→</div>
+      <div class="sim-step" id="embSimStep3">Phase 3</div>
+      <div class="sim-step-arrow">→</div>
+      <div class="sim-step" id="embSimStep4">Phase 4</div>
+    </div>
+  `;
+
+  // Show intro message
+  const introDiv = document.createElement('div');
+  introDiv.innerHTML = `
+    <div style="background:rgba(168,85,247,0.1);border:1px solid rgba(168,85,247,0.3);color:#a855f7;padding:16px;border-radius:12px;margin:16px;text-align:center;">
+      <div style="font-size:16px;font-weight:700;margin-bottom:8px;">🏛️ Sprachvisum-Interview Simulation</div>
+      <div style="font-size:13px;color:#94a3b8;">Phase 1 (Persönlich) → Phase 2 (Motivation) → Phase 3 (Finanzen) → Phase 4 (Risiken)</div>
+    </div>
+  `;
+  document.getElementById("messages").appendChild(introDiv);
+
+  // Start with Phase 1
+  startEmbassyPhase('phase1');
+}
+
+function updateEmbassySimProgress(activePhase) {
+  const steps = { phase1: 'embSimStep1', phase2: 'embSimStep2', phase3: 'embSimStep3', phase4: 'embSimStep4' };
+  const order = ['phase1', 'phase2', 'phase3', 'phase4'];
+  const activeIdx = order.indexOf(activePhase);
+
+  order.forEach((phase, idx) => {
+    const el = document.getElementById(steps[phase]);
+    if(!el) return;
+    el.className = 'sim-step';
+    if(idx < activeIdx) el.classList.add('done');
+    else if(idx === activeIdx) el.classList.add('active');
+  });
+}
+
+function proceedToNextEmbassyPhase() {
+  console.log("➡️ Proceeding to next embassy phase");
+
+  // Remove advance hint if present
+  const hint = document.getElementById('embassyAdvanceHint');
+  if(hint) hint.remove();
+
+  const phases = ['phase1', 'phase2', 'phase3', 'phase4'];
+  const currentIndex = phases.indexOf(currentEmbassyPhase);
+  const nextPhase = currentIndex < phases.length - 1 ? phases[currentIndex + 1] : null;
+
+  if(nextPhase) {
+    // Show transition message
+    const transitionDiv = document.createElement('div');
+    transitionDiv.innerHTML = `
+      <div style="background:rgba(34,197,94,0.1);border:1px solid rgba(34,197,94,0.3);color:#22c55e;padding:8px 12px;border-radius:8px;margin:8px 16px;text-align:center;font-size:13px;">
+        ➡️ <strong>Weiter zu ${EMBASSY_PHASES[nextPhase]}</strong>
+      </div>
+    `;
+    const messagesEl = document.getElementById("messages");
+    messagesEl.appendChild(transitionDiv);
+    messagesEl.scrollTop = messagesEl.scrollHeight;
+
+    setTimeout(() => {
+      startEmbassyPhase(nextPhase);
+    }, 1000);
+  } else {
+    // All phases completed
+    const completedDiv = document.createElement('div');
+    completedDiv.innerHTML = `
+      <div style="background:rgba(34,197,94,0.1);border:1px solid rgba(34,197,94,0.3);color:#22c55e;padding:16px;border-radius:12px;margin:16px;text-align:center;">
+        <div style="font-size:16px;font-weight:700;margin-bottom:8px;">🎉 Interview beendet!</div>
+        <div style="font-size:14px;">Alle vier Phasen des Sprachvisum-Interviews wurden abgeschlossen. Gut gemacht!</div>
+        <div style="margin-top:12px;">
+          <button onclick="goBack()" style="background:rgba(168,85,247,0.2);border:1px solid rgba(168,85,247,0.3);color:#a855f7;padding:8px 16px;border-radius:8px;cursor:pointer;font-size:13px;">🏠 Về trang chủ</button>
+        </div>
+      </div>
+    `;
+    const messagesEl = document.getElementById("messages");
+    messagesEl.appendChild(completedDiv);
+    messagesEl.scrollTop = messagesEl.scrollHeight;
+  }
+}
+
+function maybeShowEmbassyAdvanceHint() {
+  embassyUserMsgCount++;
+
+  // Show hint every 4 user messages
+  if(embassyUserMsgCount % 4 !== 0) return;
+
+  // Don't show if already showing
+  if(document.getElementById('embassyAdvanceHint')) return;
+
+  const phases = ['phase1', 'phase2', 'phase3', 'phase4'];
+  const currentIndex = phases.indexOf(currentEmbassyPhase);
+  const isLastPhase = currentIndex >= phases.length - 1;
+  const nextLabel = isLastPhase ? null : EMBASSY_PHASES[phases[currentIndex + 1]];
+
+  const hintDiv = document.createElement('div');
+  hintDiv.id = 'embassyAdvanceHint';
+  hintDiv.innerHTML = `
+    <div style="background:rgba(168,85,247,0.08);border:1px solid rgba(168,85,247,0.25);padding:8px 12px;border-radius:8px;margin:8px 16px;display:flex;align-items:center;justify-content:space-between;font-size:12px;">
+      <span style="color:#a855f7;">💡 ${embassyUserMsgCount} câu trả lời trong phase này</span>
+      <div style="display:flex;gap:6px;">
+        ${!isLastPhase ? `<button onclick="proceedToNextEmbassyPhase()" style="background:rgba(34,197,94,0.15);border:1px solid rgba(34,197,94,0.3);color:#22c55e;padding:4px 10px;border-radius:6px;cursor:pointer;font-size:11px;">➡️ ${nextLabel}</button>` : ''}
+        <button onclick="this.parentNode.parentNode.parentNode.remove()" style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.15);color:#94a3b8;padding:4px 10px;border-radius:6px;cursor:pointer;font-size:11px;">Weiter üben</button>
+      </div>
+    </div>
+  `;
+
+  const messagesEl = document.getElementById("messages");
+  messagesEl.appendChild(hintDiv);
+  messagesEl.scrollTop = messagesEl.scrollHeight;
 }
 
 // ===== B1 Structure Analysis =====
@@ -3614,14 +4128,67 @@ let demoCurrentTeil = 'teil1', demoGlobalIndex = 0;
 let demoShowVN = true, demoAutoTTS = true;
 let demoDelay = 3000, demoAllMessages = [];
 let demoTTSStartTime = 0;
+let demoMode = 'telc'; // 'telc' or 'embassy'
 
 function startDemoExam() {
+  demoMode = 'telc';
   document.getElementById('landing').style.display = 'none';
   document.getElementById('chat').style.display = 'none';
+
+  // Set TELC header
+  document.getElementById('demoHeader').innerHTML = `
+    <div style="display:flex;align-items:center;justify-content:space-between;">
+      <button onclick="exitDemoExam()" style="padding:6px 12px;border-radius:8px;border:1px solid rgba(245,158,11,0.3);background:rgba(245,158,11,0.1);color:#fbbf24;font-size:12px;cursor:pointer;">\u2190 V\u1ec1</button>
+      <div class="demo-title">\ud83c\udfac Demo TELC B1 M\u00fcndliche Pr\u00fcfung</div>
+      <div style="width:50px;"></div>
+    </div>
+    <div class="demo-legend">
+      <span><span style="color:#f59e0b;">\u25cf</span> Pr\u00fcfer</span>
+      <span><span style="color:#3b82f6;">\u25cf</span> Kandidat A</span>
+      <span><span style="color:#10b981;">\u25cf</span> Kandidat B</span>
+    </div>
+    <div class="demo-teil-nav">
+      <button class="demo-teil-btn active" onclick="jumpToTeil('teil1')">Teil 1</button>
+      <button class="demo-teil-btn" onclick="jumpToTeil('teil2')">Teil 2</button>
+      <button class="demo-teil-btn" onclick="jumpToTeil('teil3')">Teil 3</button>
+    </div>
+  `;
+
   const el = document.getElementById('demoExam');
   el.style.display = 'flex';
   demoReset();
   jumpToTeil('teil1');
+  demoPlay();
+}
+
+function startDemoEmbassy() {
+  demoMode = 'embassy';
+  document.getElementById('landing').style.display = 'none';
+  document.getElementById('chat').style.display = 'none';
+
+  // Set embassy header
+  document.getElementById('demoHeader').innerHTML = `
+    <div style="display:flex;align-items:center;justify-content:space-between;">
+      <button onclick="exitDemoExam()" style="padding:6px 12px;border-radius:8px;border:1px solid rgba(168,85,247,0.3);background:rgba(168,85,247,0.1);color:#c084fc;font-size:12px;cursor:pointer;">\u2190 V\u1ec1</button>
+      <div class="demo-title" style="color:#c084fc;">\ud83c\udfec Demo Ph\u1ecfng v\u1ea5n Sprachvisum</div>
+      <div style="width:50px;"></div>
+    </div>
+    <div class="demo-legend">
+      <span><span style="color:#a855f7;">\u25cf</span> Beamter</span>
+      <span><span style="color:#22c55e;">\u25cf</span> Antragsteller</span>
+    </div>
+    <div class="demo-teil-nav">
+      <button class="demo-teil-btn active" onclick="jumpToTeil('phase1')" style="border-color:rgba(168,85,247,0.3);background:rgba(168,85,247,0.08);color:#c084fc;">Phase 1</button>
+      <button class="demo-teil-btn" onclick="jumpToTeil('phase2')" style="border-color:rgba(168,85,247,0.3);background:rgba(168,85,247,0.08);color:#c084fc;">Phase 2</button>
+      <button class="demo-teil-btn" onclick="jumpToTeil('phase3')" style="border-color:rgba(168,85,247,0.3);background:rgba(168,85,247,0.08);color:#c084fc;">Phase 3</button>
+      <button class="demo-teil-btn" onclick="jumpToTeil('phase4')" style="border-color:rgba(168,85,247,0.3);background:rgba(168,85,247,0.08);color:#c084fc;">Phase 4</button>
+    </div>
+  `;
+
+  const el = document.getElementById('demoExam');
+  el.style.display = 'flex';
+  demoReset();
+  jumpToTeil('phase1');
   demoPlay();
 }
 
@@ -3641,30 +4208,31 @@ function skipToDemo() {
   app.style.display = '';
   document.getElementById('landing').style.display = 'none';
   document.getElementById('chat').style.display = 'none';
-  const el = document.getElementById('demoExam');
-  el.style.display = 'flex';
-  demoReset();
-  jumpToTeil('teil1');
-  demoPlay();
+  // Default to TELC demo from skip button
+  startDemoExam();
 }
 
-function buildDemoMessageList(startTeil) {
-  const teils = ['teil1', 'teil2', 'teil3'];
-  const startIdx = teils.indexOf(startTeil);
+function buildDemoMessageList(startSection) {
+  const script = demoMode === 'embassy' ? DEMO_EMBASSY_SCRIPT : DEMO_EXAM_SCRIPT;
+  const sections = demoMode === 'embassy'
+    ? ['phase1', 'phase2', 'phase3', 'phase4']
+    : ['teil1', 'teil2', 'teil3'];
+  const startIdx = sections.indexOf(startSection);
   const result = [];
-  for (let i = startIdx; i < teils.length; i++) {
-    const t = teils[i];
-    const data = DEMO_EXAM_SCRIPT[t];
-    result.push({ type: 'separator', teil: t, title: data.title, description: data.description });
+  for (let i = startIdx; i < sections.length; i++) {
+    const s = sections[i];
+    const data = script[s];
+    result.push({ type: 'separator', teil: s, title: data.title, description: data.description });
     for (const msg of data.messages) {
-      result.push({ type: 'message', teil: t, ...msg });
+      result.push({ type: 'message', teil: s, ...msg });
     }
   }
   return result;
 }
 
 function addDemoTeilSeparator(teil) {
-  const data = DEMO_EXAM_SCRIPT[teil];
+  const script = demoMode === 'embassy' ? DEMO_EMBASSY_SCRIPT : DEMO_EXAM_SCRIPT;
+  const data = script[teil];
   const container = document.getElementById('demoMessages');
   const div = document.createElement('div');
   div.className = 'demo-teil-separator';
@@ -3675,7 +4243,8 @@ function addDemoTeilSeparator(teil) {
 
 function addDemoBubble(speaker, de, vn, tip) {
   const container = document.getElementById('demoMessages');
-  const info = DEMO_SPEAKERS[speaker];
+  const speakers = demoMode === 'embassy' ? DEMO_EMBASSY_SPEAKERS : DEMO_SPEAKERS;
+  const info = speakers[speaker];
   const wrap = document.createElement('div');
   wrap.className = `demo-wrap ${speaker}`;
 
@@ -3872,9 +4441,11 @@ function demoSpeakText(text) {
 
 function updateDemoTeilButtons(activeTeil) {
   const btns = document.querySelectorAll('.demo-teil-btn');
-  const teils = ['teil1', 'teil2', 'teil3'];
+  const sections = demoMode === 'embassy'
+    ? ['phase1', 'phase2', 'phase3', 'phase4']
+    : ['teil1', 'teil2', 'teil3'];
   btns.forEach((btn, i) => {
-    btn.classList.toggle('active', teils[i] === activeTeil);
+    btn.classList.toggle('active', sections[i] === activeTeil);
   });
 }
 
