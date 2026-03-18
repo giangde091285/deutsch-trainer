@@ -39,7 +39,7 @@ parser.add_argument('--local-only', action='store_true', help='Only allow local 
 parser.add_argument('--ngrok', action='store_true', help='Auto-start ngrok tunnel for internet sharing')
 args = parser.parse_args()
 
-PORT = int(os.environ.get('PORT', args.port))
+PORT = args.port
 HOST = '127.0.0.1' if args.local_only else args.host
 
 # Database setup
@@ -729,14 +729,22 @@ def call_ai(prompt, use_vietnamese=False, api_key="dummy"):
         import urllib.parse
         import json
 
-        # Use the same models as the main AI handler
+        # Free models on OpenRouter (March 2026)
         models = [
-            "openai/gpt-3.5-turbo",
-            "anthropic/claude-3-haiku:beta",
-            "meta-llama/llama-3.1-8b-instruct:free",
-            "mistralai/mistral-7b-instruct:free",
-            "google/gemini-flash-1.5:free",
-            "openrouter/auto:free",
+            "openrouter/free",
+            "meta-llama/llama-3.3-70b-instruct:free",
+            "mistralai/mistral-small-3.1-24b-instruct:free",
+            "google/gemma-3-27b-it:free",
+            "google/gemma-3-12b-it:free",
+            "qwen/qwen3-next-80b-a3b-instruct:free",
+            "nvidia/nemotron-3-super-120b-a12b:free",
+            "nvidia/nemotron-3-nano-30b-a3b:free",
+            "stepfun/step-3.5-flash:free",
+            "openai/gpt-oss-120b:free",
+            "openai/gpt-oss-20b:free",
+            "nousresearch/hermes-3-llama-3.1-405b:free",
+            "minimax/minimax-m2.5:free",
+            "cognitivecomputations/dolphin-mistral-24b-venice-edition:free",
         ]
 
         system_prompt = "Du bist ein erfahrener TELC B1 Prüfer. Antworte auf Vietnamesisch mit detaillierter Bewertung." if use_vietnamese else "You are a professional TELC B1 examiner."
@@ -5197,21 +5205,26 @@ class Handler(http.server.BaseHTTPRequestHandler):
         system   = payload.get("system", "")
         messages = payload.get("messages", [])
 
-        # Try current working free models (January 2026)
+        # Free models on OpenRouter (March 2026)
         models = [
-            "openai/gpt-3.5-turbo",  # Often has free quota
-            "anthropic/claude-3-haiku:beta",  # Sometimes free
-            "meta-llama/llama-3.1-8b-instruct:free",
-            "mistralai/mistral-7b-instruct:free",
-            "google/gemini-flash-1.5:free",
-            "huggingface/meta-llama/Llama-3.2-1B-Instruct",
-            "liquid/lfm-40b:free",
-            "openrouter/auto:free",  # Generic free endpoint fallback
+            "openrouter/free",
+            "meta-llama/llama-3.3-70b-instruct:free",
+            "mistralai/mistral-small-3.1-24b-instruct:free",
+            "google/gemma-3-27b-it:free",
+            "google/gemma-3-12b-it:free",
+            "qwen/qwen3-next-80b-a3b-instruct:free",
+            "nvidia/nemotron-3-super-120b-a12b:free",
+            "nvidia/nemotron-3-nano-30b-a3b:free",
+            "stepfun/step-3.5-flash:free",
+            "openai/gpt-oss-120b:free",
+            "openai/gpt-oss-20b:free",
+            "nousresearch/hermes-3-llama-3.1-405b:free",
+            "minimax/minimax-m2.5:free",
+            "cognitivecomputations/dolphin-mistral-24b-venice-edition:free",
         ]
         last_err = "No model available"
         for model in models:
-            # Adjust max_tokens based on model to avoid truncation
-            max_tokens = 1500 if ":free" in model else 2000
+            max_tokens = 1500
 
             or_body = json.dumps({
                 "model": model,
@@ -5305,6 +5318,9 @@ class Handler(http.server.BaseHTTPRequestHandler):
                     return
                 elif e.code == 402:
                     last_err = "Insufficient credits. Check your OpenRouter account balance."
+                elif e.code == 429:
+                    import time
+                    time.sleep(2)
                 continue
             except Exception as e:
                 last_err = str(e)
